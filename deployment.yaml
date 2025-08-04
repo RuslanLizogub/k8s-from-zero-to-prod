@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k8s-web-hello
+spec:
+  selector:
+    matchLabels:
+      app: k8s-web-hello
+  template:
+    metadata:
+      labels:
+        app: k8s-web-hello
+    spec:
+      containers:
+      - name: k8s-web-hello
+        image: ruslanlizogub/k8s-web-hello-ua
+        resources:
+          requests: # recomendation from gpt-4o
+            memory: "64Mi"
+            cpu: "125m"
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+        ports:
+        - containerPort: 3000
