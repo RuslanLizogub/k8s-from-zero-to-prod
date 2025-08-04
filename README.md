@@ -14,6 +14,9 @@ A comprehensive step-by-step guide to Kubernetes operations, from basic pod mana
 ### 1. Install Required Tools
 
 ```bash
+# Install Docker
+brew install --cask docker
+
 # Install kubectl (Kubernetes CLI)
 brew install kubectl
 
@@ -22,6 +25,7 @@ curl -LO https://github.com/kubernetes/minikube/releases/latest/download/minikub
 sudo install minikube-darwin-arm64 /usr/local/bin/minikube
 
 # Verify installations
+docker --version
 kubectl version --client
 minikube version
 ```
@@ -37,6 +41,138 @@ kubectl cluster-info
 
 # Set alias for convenience
 alias k=kubectl
+
+# Start Docker Desktop (if not running)
+open -a Docker
+```
+
+## Docker Application Development
+
+### 1. Create a Simple Web Application
+
+**Create project structure:**
+```bash
+mkdir my-app
+cd my-app
+```
+
+**Create package.json:**
+```json
+{
+  "name": "my-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.mjs"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
+```
+
+**Create index.mjs (web server):**
+```javascript
+import express from 'express'
+import os from 'os'
+
+const app = express()
+const PORT = 3000
+
+app.get("/", (req, res) => {
+  const helloMessage = `<h1>Hello from ${os.hostname()}</h1>`
+  console.log(helloMessage)
+  res.send(helloMessage)
+})
+
+app.listen(PORT, () => {
+  console.log(`Web server is listening at port ${PORT}`)
+})
+```
+
+### 2. Create Dockerfile
+
+```dockerfile
+FROM node:alpine
+
+WORKDIR /app
+
+EXPOSE 3000
+
+COPY package.json package-lock.json ./
+
+RUN npm install
+
+COPY . ./
+
+CMD ["npm", "start"]
+```
+
+### 3. Build and Test Docker Image
+
+```bash
+# Install dependencies
+npm install
+
+# Build Docker image
+docker build . -t your-username/app-name:latest
+
+# List local images
+docker images
+
+# Run container locally
+docker run -d -p 3000:3000 your-username/app-name:latest
+
+# Check if container is running
+docker ps
+
+# Test the application
+curl http://localhost:3000
+
+# Stop container
+docker stop <container-id>
+```
+
+### 4. Working with Containers
+
+```bash
+# List running containers
+docker ps
+
+# List all containers (including stopped)
+docker ps -a
+
+# View container logs
+docker logs <container-id>
+
+# Follow logs in real-time
+docker logs -f <container-id>
+
+# Execute commands inside container
+docker exec -it <container-id> /bin/sh
+
+# Copy files from/to container
+docker cp <container-id>:/app/file.txt ./local-file.txt
+
+# Inspect container details
+docker inspect <container-id>
+```
+
+### 5. Push to Docker Hub
+
+```bash
+# Login to Docker Hub
+docker login
+
+# Tag image with your username
+docker tag app-name:latest your-username/app-name:latest
+
+# Push to Docker Hub
+docker push your-username/app-name:latest
+
+# Push multiple tags
+docker build . -t your-username/app-name:latest -t your-username/app-name:1.0.0
+docker push your-username/app-name --all-tags
 ```
 
 ## Basic Operations
@@ -82,7 +218,7 @@ kubectl delete deployment my-app
 
 ## Intermediate Operations
 
-### 1. Container Image Management
+### 1. Container Image Management (Advanced)
 
 ```bash
 # Build Docker image
@@ -97,7 +233,15 @@ docker push your-username/app-name --all-tags
 
 # List local images
 docker images
-```
+
+# Remove unused images
+docker image prune
+
+# Remove all unused images
+docker image prune -a
+
+# View image history
+docker history your-username/app-name:latest
 
 ### 2. Service Creation and Management
 
@@ -272,6 +416,21 @@ kubectl get all
 
 ## Common Commands Reference
 
+### Docker Commands
+| Command | Description |
+|---------|-------------|
+| `docker build . -t name:tag` | Build Docker image |
+| `docker run -d -p host:container name:tag` | Run container in background |
+| `docker ps` | List running containers |
+| `docker ps -a` | List all containers |
+| `docker logs <container>` | View container logs |
+| `docker exec -it <container> /bin/sh` | Access container shell |
+| `docker push username/image:tag` | Push image to registry |
+| `docker pull username/image:tag` | Pull image from registry |
+| `docker images` | List local images |
+| `docker stop <container>` | Stop running container |
+
+### Kubernetes Commands
 | Command | Description |
 |---------|-------------|
 | `kubectl get pods` | List all pods |
@@ -289,6 +448,13 @@ kubectl get all
 
 ### Common Issues
 
+#### Docker Issues
+1. **Image build fails**: Check Dockerfile syntax and dependencies
+2. **Container won't start**: Check port conflicts and resource limits
+3. **Push to registry fails**: Verify Docker Hub credentials
+4. **Container exits immediately**: Check CMD/ENTRYPOINT and application logs
+
+#### Kubernetes Issues
 1. **Pod stuck in Pending**: Check resource availability and node capacity
 2. **Service not accessible**: Verify service type and port configuration
 3. **Image pull errors**: Check image name and registry authentication
@@ -296,6 +462,14 @@ kubectl get all
 
 ### Debugging Steps
 
+#### Docker Debugging
+1. Check container status: `docker ps -a`
+2. View container logs: `docker logs <container>`
+3. Inspect container: `docker inspect <container>`
+4. Test container: `docker exec -it <container> /bin/sh`
+5. Check image details: `docker history <image>`
+
+#### Kubernetes Debugging
 1. Check pod status: `kubectl get pods`
 2. View pod events: `kubectl describe pod <name>`
 3. Check logs: `kubectl logs <pod>`
