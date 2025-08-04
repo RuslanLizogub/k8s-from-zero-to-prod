@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: k8s-web-hello
 spec:
+  replicas: 3
   selector:
     matchLabels:
       app: k8s-web-hello
