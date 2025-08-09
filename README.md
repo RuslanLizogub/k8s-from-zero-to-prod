@@ -8,6 +8,7 @@ A comprehensive step-by-step guide to Kubernetes operations, from basic pod mana
 - [Basic Operations](#basic-operations)
 - [Advanced Operations](#advanced-operations)
 - [Multi-Deployment Architecture](#multi-deployment-architecture)
+- [DigitalOcean Kubernetes Deployment](#digitalocean-kubernetes-deployment)
 - [Monitoring and Debugging](#monitoring-and-debugging)
 - [Common Commands Reference](#common-commands-reference)
 
@@ -272,6 +273,102 @@ spec:
   - port: 8080
     targetPort: 8080
 ```
+
+## DigitalOcean Kubernetes Deployment
+
+### Setup DigitalOcean Account and Cluster
+
+1. **Register at DigitalOcean**
+   - Go to [cloud.digitalocean.com](https://cloud.digitalocean.com)
+   - Create account and verify email
+   - Add payment method
+
+2. **Create Kubernetes Cluster**
+   ```bash
+   # Login to DigitalOcean dashboard
+   # Navigate to: Create → Kubernetes
+   # Select region (e.g., Frankfurt)
+   # Choose node configuration (2 nodes recommended)
+   # Name cluster: k8s-cluster
+   ```
+
+3. **Connect to Cluster**
+   ```bash
+   # Download kubeconfig from DO dashboard
+   # Or use doctl CLI:
+   brew install doctl
+   doctl auth init
+   doctl kubernetes cluster kubeconfig save k8s-cluster
+   
+   # Verify connection
+   kubectl cluster-info
+   kubectl get nodes
+   ```
+
+### Deploy Application to DigitalOcean
+
+**Important**: Use `linux/amd64` platform for DigitalOcean compatibility:
+
+```dockerfile
+# Dockerfile
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+FROM --platform=${TARGETPLATFORM:-linux/amd64} node:alpine
+# ... rest of Dockerfile
+```
+
+**Deploy using project configs:**
+```bash
+# Build and push image
+docker build . -t your-username/k8s-web-to-nginx-ua:latest
+docker push your-username/k8s-web-to-nginx-ua:latest
+
+# Apply configurations
+kubectl apply -f k8s-web-to-nginx.yaml -f nginx.yaml
+
+# Check deployment
+kubectl get pods
+kubectl get svc
+kubectl get nodes -o wide
+```
+
+**Access deployed application:**
+```bash
+# Get LoadBalancer IP
+kubectl get svc
+
+# Application will be available at:
+# http://EXTERNAL-IP:80 (nginx proxy)
+# Example: http://134.122.64.123
+```
+
+### DigitalOcean Cluster Management
+
+```bash
+# Check cluster status
+kubectl cluster-info
+kubectl get nodes
+kubectl describe node <node-name>
+
+# Monitor deployments
+kubectl get deploy
+kubectl get pods -o wide
+
+# Scale deployment
+kubectl scale deployment k8s-web-to-nginx --replicas=3
+
+# Delete all resources
+kubectl delete all --all
+```
+
+### Key Configuration Files
+
+This project uses two main Kubernetes manifests:
+
+- **`k8s-web-to-nginx.yaml`** - Web application deployment
+- **`nginx.yaml`** - Nginx reverse proxy with LoadBalancer
+
+Both files are configured for 2-node cluster with proper resource limits and LoadBalancer service for external access.
 
 ## Monitoring and Debugging
 
